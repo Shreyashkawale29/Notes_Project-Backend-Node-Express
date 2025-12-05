@@ -13,5 +13,16 @@
   "dependencies": {
     "ejs": "^3.1.10",
     "express": "^5.2.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shreyashkawale29/Notes_Project-Backend-Node-Express.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Shreyashkawale29/Notes_Project-Backend-Node-Express/issues"
+  },
+  "homepage": "https://github.com/Shreyashkawale29/Notes_Project-Backend-Node-Express#readme",
+  "devDependencies": {
+    "nodemon": "^3.1.11"
   }
 }
