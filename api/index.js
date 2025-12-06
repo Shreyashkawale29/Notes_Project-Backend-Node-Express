@@ -5,61 +5,81 @@ const fs = require("fs");
 
 const app = express();
 
+// Correct view engine
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "../views"));
 
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files
-app.use(express.static(path.join(__dirname, "../public")));
+// Static files
+app.use("/public", express.static(path.join(__dirname, "../public")));
 
-// ROUTES
-app.get("/", function (req, res) {
-  fs.readdir(path.join(__dirname, "../files"), function (err, files) {
+// HOME PAGE
+app.get("/", (req, res) => {
+  const filesPath = path.join(__dirname, "../files");
+
+  fs.readdir(filesPath, (err, files) => {
+    if (err) {
+      console.error("FS ERROR (readdir):", err);
+      return res.status(500).send("Error reading files folder.");
+    }
+
     res.render("index.ejs", { files });
   });
 });
 
-app.get("/file/:filename", function (req, res) {
-  fs.readFile(
-    path.join(__dirname, `../files/${req.params.filename}`),
-    "utf-8",
-    function (err, filedata) {
-      res.render("show.ejs", {
-        filename: req.params.filename,
-        filedata,
-      });
+// VIEW FILE
+app.get("/file/:filename", (req, res) => {
+  const filePath = path.join(__dirname, `../files/${req.params.filename}`);
+
+  fs.readFile(filePath, "utf-8", (err, data) => {
+    if (err || !data) {
+      console.error("FS ERROR (readFile):", err);
+      return res.status(500).send("Error reading file.");
     }
-  );
+
+    res.render("show.ejs", {
+      filename: req.params.filename,
+      filedata: data,
+    });
+  });
 });
 
-app.get("/edit/:filename", function (req, res) {
+// EDIT PAGE
+app.get("/edit/:filename", (req, res) => {
   res.render("edit.ejs", { filename: req.params.filename });
 });
 
-app.post("/create", function (req, res) {
-  const fileName = req.body.title.split(" ").join("") + ".txt";
+// CREATE FILE
+app.post("/create", (req, res) => {
+  const filename = req.body.title.split(" ").join("") + ".txt";
+  const filePath = path.join(__dirname, `../files/${filename}`);
 
-  fs.writeFile(
-    path.join(__dirname, `../files/${fileName}`),
-    req.body.details,
-    function () {
-      res.redirect("/");
+  fs.writeFile(filePath, req.body.details, (err) => {
+    if (err) {
+      console.error("FS ERROR (writeFile):", err);
+      return res.status(500).send("Cannot create file.");
     }
-  );
+    res.redirect("/");
+  });
 });
 
-app.post("/edit", function (req, res) {
-  fs.rename(
-    path.join(__dirname, `../files/${req.body.previous}`),
-    path.join(__dirname, `../files/${req.body.new}`),
-    function () {
-      res.redirect("/");
+// RENAME FILE
+app.post("/edit", (req, res) => {
+  const oldPath = path.join(__dirname, `../files/${req.body.previous}`);
+  const newPath = path.join(__dirname, `../files/${req.body.new}`);
+
+  fs.rename(oldPath, newPath, (err) => {
+    if (err) {
+      console.error("FS ERROR (rename):", err);
+      return res.status(500).send("Failed to rename file.");
     }
-  );
+    res.redirect("/");
+  });
 });
 
-// EXPORT FOR VERCEL
+// Export for Vercel
 module.exports = app;
 module.exports.handler = serverless(app);
